@@ -13,13 +13,17 @@ const indexRouter = require('./routes/index');
 
 const app = express();
 
-mongoose.connect('mongodb://localhost:27017/shopping');
+mongoose.connect('mongodb://localhost:27017/shopping', {
+  useUnifiedTopology: true,
+  useNewUrlParser: true
+});
 require('./config/passport');
 
 // view engine setup
 app.engine('.hbs', expressHBS({ defaultLayout: 'layout', extname: '.hbs' }));
 app.set('view engine', '.hbs');
 
+// middleware setup
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
