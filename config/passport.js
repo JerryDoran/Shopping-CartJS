@@ -12,6 +12,7 @@ passport.deserializeUser((id, done) => {
   });
 });
 
+// SIGN UP STRATEGY
 passport.use(
   'local.signup',
   new LocalStrategy(
@@ -21,6 +22,23 @@ passport.use(
       passReqToCallback: true
     },
     (req, email, password, done) => {
+      // Validate information on form is in correct format
+      // req
+      //   .checkBody('email', 'Invalid email')
+      //   .notEmpty()
+      //   .isEmail();
+      // req
+      //   .checkBody('password', 'Invalid password')
+      //   .notEmpty()
+      //   .isLength({ min: 4 });
+      // let errors = validationResult(req);
+      // if (errors) {
+      //   let messages = [];
+      //   errors.forEach(error => {
+      //     messages.push(error.msg);
+      //   });
+      //   return done(null, false, req.flash('error', messages));
+      // }
       User.findOne({ email: email }, (err, user) => {
         if (err) {
           return done(err);
@@ -37,6 +55,46 @@ passport.use(
           }
           return done(null, newUser);
         });
+      });
+    }
+  )
+);
+
+// SIGN IN STRATEGY
+passport.use(
+  'local.signin',
+  new LocalStrategy(
+    {
+      usernameField: 'email',
+      passwordField: 'password',
+      passReqToCallback: true
+    },
+    (req, email, password, done) => {
+      // req
+      //   .checkBody('email', 'Invalid email')
+      //   .notEmpty()
+      //   .isEmail();
+      // req
+      //   .checkBody('password', 'Invalid password')
+      //   .notEmpty()
+      // let errors = validationResult(req);
+      // if (errors) {
+      //   let messages = [];
+      //   errors.forEach(error => {
+      //     messages.push(error.msg);
+      //   });
+      //   return done(null, false, req.flash('error', messages));
+      User.findOne({ email: email }, (err, user) => {
+        if (err) {
+          return done(err);
+        }
+        if (!user) {
+          return done(null, false, { message: 'No user found.' });
+        }
+        if (!user.validPassword(password)) {
+          return done(null, false, { message: 'Wrong password' });
+        }
+        return done(null, user);
       });
     }
   )

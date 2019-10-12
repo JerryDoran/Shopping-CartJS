@@ -2,14 +2,17 @@ const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 const logger = require('morgan');
 const expressHBS = require('express-handlebars');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('passport');
 const flash = require('connect-flash');
+const { check, validationResult } = require('express-validator');
 
 const indexRouter = require('./routes/index');
+const userRoutes = require('./routes/user');
 
 const app = express();
 
@@ -28,6 +31,8 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(
   session({ secret: 'mynameisdug', resave: false, saveUninitialized: false })
 );
@@ -36,6 +41,13 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use((req, res, next) => {
+  res.locals.login = req.isAuthenticated();
+  next();
+});
+
+// Order is important for these routes.  Home route '/' should go last
+app.use('/user', userRoutes);
 app.use('/', indexRouter);
 
 // catch 404 and forward to error handler
