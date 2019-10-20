@@ -10,6 +10,7 @@ const session = require('express-session');
 const passport = require('passport');
 const flash = require('connect-flash');
 const { check, validationResult } = require('express-validator');
+const MongoStore = require('connect-mongo')(session);
 
 const indexRouter = require('./routes/index');
 const userRoutes = require('./routes/user');
@@ -34,7 +35,13 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(
-  session({ secret: 'mynameisdug', resave: false, saveUninitialized: false })
+  session({
+    secret: 'mynameisdug',
+    resave: false,
+    saveUninitialized: false,
+    store: new MongoStore({ mongooseConnection: mongoose.connection }),
+    cookie: { maxAge: 180 * 60 * 1000 }
+  })
 );
 app.use(flash());
 app.use(passport.initialize());
@@ -42,7 +49,9 @@ app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
+  // Make available to the view files in my application
   res.locals.login = req.isAuthenticated();
+  res.locals.session = req.session;
   next();
 });
 
