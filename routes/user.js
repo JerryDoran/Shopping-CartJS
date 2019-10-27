@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const csrf = require('csurf');
 const passport = require('passport');
+const Order = require('../models/order');
+const Cart = require('../models/cart');
 
 // MIDDLEWARE PROTECTION
 const csrfProtection = csrf();
@@ -10,7 +12,22 @@ router.use(csrfProtection);
 
 // GET - User profile route
 router.get('/profile', isLoggedIn, (req, res, next) => {
-  res.render('user/profile');
+  Order.find(
+    {
+      user: req.user
+    },
+    (err, orders) => {
+      if (err) {
+        return res.write('Error!');
+      }
+      let cart;
+      orders.forEach(order => {
+        cart = new Cart(order.cart);
+        order.items = cart.generateArray();
+      });
+      res.render('user/profile', { orders: orders });
+    }
+  );
 });
 
 router.get('/logout', isLoggedIn, (req, res, next) => {
@@ -36,10 +53,18 @@ router.get('/signup', (req, res, next) => {
 router.post(
   '/signup',
   passport.authenticate('local.signup', {
-    successRedirect: '/user/profile',
     failureRedirect: '/user/signup',
     failureFlash: true
-  })
+  }),
+  (req, res, next) => {
+    if (req.session.oldUrl) {
+      let oldUrl = req.session.oldUrl;
+      req.session.oldUrl = null;
+      res.redirect(req.session.oldUrl);
+    } else {
+      res.redirect('/user/profile');
+    }
+  }
 );
 
 // GET - User sign in route
@@ -56,10 +81,18 @@ router.get('/signin', (req, res, next) => {
 router.post(
   '/signin',
   passport.authenticate('local.signin', {
-    successRedirect: '/user/profile',
     failureRedirect: '/user/signin',
     failureFlash: true
-  })
+  }),
+  (req, res, next) => {
+    if (req.session.oldUrl) {
+      let oldUrl = req.session.oldUrl;
+      req.session.oldUrl = null;
+      res.redirect(oldUrl);
+    } else {
+      res.redirect('/user/profile');
+    }
+  }
 );
 
 module.exports = router;

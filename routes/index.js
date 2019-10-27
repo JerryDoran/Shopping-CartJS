@@ -43,6 +43,26 @@ router.get('/add-to-cart/:id', (req, res, next) => {
   });
 });
 
+router.get('/delete/:id', (req, res, next) => {
+  let productId = req.params.id;
+
+  let cart = new Cart(req.session.cart ? req.session.cart : {});
+
+  cart.deleteOneItem(productId);
+  req.session.cart = cart;
+  res.redirect('/shopping-cart');
+});
+
+router.get('/deleteAll/:id', (req, res, next) => {
+  let productId = req.params.id;
+
+  let cart = new Cart(req.session.cart ? req.session.cart : {});
+
+  cart.deleteAllItems(productId);
+  req.session.cart = cart;
+  res.redirect('/shopping-cart');
+});
+
 // GET Route to view the shopping cart page
 router.get('/shopping-cart', (req, res, next) => {
   // Check to see if we have a cart
@@ -57,7 +77,7 @@ router.get('/shopping-cart', (req, res, next) => {
 });
 
 // GET Route to checkout
-router.get('/checkout', (req, res, next) => {
+router.get('/checkout', isLoggedIn, (req, res, next) => {
   // Check to see if we have a cart
   if (!req.session.cart) {
     return res.redirect('/shopping-cart');
@@ -71,7 +91,7 @@ router.get('/checkout', (req, res, next) => {
   });
 });
 
-router.post('/checkout', (req, res, next) => {
+router.post('/checkout', isLoggedIn, (req, res, next) => {
   if (!req.session.cart) {
     return res.redirect('/shopping-cart');
   }
@@ -118,5 +138,14 @@ router.post('/checkout', (req, res, next) => {
     }
   );
 });
+
+function isLoggedIn(req, res, next) {
+  if (req.isAuthenticated()) {
+    // Just means continue
+    return next();
+  }
+  req.session.oldUrl = req.url;
+  res.redirect('/user/signin');
+}
 
 module.exports = router;
